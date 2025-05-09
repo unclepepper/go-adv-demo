@@ -30,7 +30,7 @@ func main() {
 		Handler: router,
 	}
 
-	fmt.Println("Hello World Server is listening on :8080")
+	fmt.Println("Server is listening on :8080")
 	err := server.ListenAndServe()
 	if err != nil {
 		return
