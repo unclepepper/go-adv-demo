@@ -12,10 +12,15 @@ type Link struct {
 }
 
 func NewLink(url string) (*Link, error) {
-	return &Link{
-		URL:  url,
-		Hash: RandStringRunes(6),
-	}, nil
+	link := &Link{
+		URL: url,
+	}
+	link.GenerateHash()
+	return link, nil
+}
+
+func (link *Link) GenerateHash() {
+	link.Hash = RandStringRunes(6)
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
