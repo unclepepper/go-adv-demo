@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"fmt"
 	"go/adv-demo/configs"
+	"go/adv-demo/pkg/jwt"
 	"go/adv-demo/pkg/req"
 	"go/adv-demo/pkg/res"
 	"net/http"
@@ -36,10 +36,18 @@ func (h *AuthHandler) Login() http.HandlerFunc {
 		}
 
 		email, err := h.AuthService.Login(body.Email, body.Password)
-		fmt.Println(email, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 
+		token, err := jwt.NewJWT(h.Config.Auth.Secret).Create(email)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		data := LoginResponse{
-			Token: h.Config.Auth.Secret,
+			Token: token,
 		}
 		res.Json(w, data, http.StatusOK)
 	}
@@ -51,6 +59,20 @@ func (h *AuthHandler) Register() http.HandlerFunc {
 		if err != nil {
 			return
 		}
-		h.AuthService.Register(body.Email, body.Password, body.Name)
+		email, err := h.AuthService.Register(body.Email, body.Password, body.Name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		token, err := jwt.NewJWT(h.Config.Auth.Secret).Create(email)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		data := RegisterResponse{
+			Token: token,
+		}
+		res.Json(w, data, http.StatusOK)
 	}
 }

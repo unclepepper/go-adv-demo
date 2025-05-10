@@ -14,6 +14,20 @@ func NewAuthService(userRepository *user.UserRepository) *AuthService {
 	return &AuthService{UserRepository: userRepository}
 }
 
+func (service *AuthService) Login(email, password string) (string, error) {
+	existedUser, _ := service.UserRepository.GetByEmail(email)
+	if existedUser == nil {
+		return "", errors.New(ErrWrongCredentials)
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+	if err != nil {
+		return "", errors.New(ErrWrongCredentials)
+	}
+
+	return existedUser.Email, nil
+}
+
 func (service *AuthService) Register(email, password, name string) (string, error) {
 	existedUser, _ := service.UserRepository.GetByEmail(email)
 	if existedUser != nil {
@@ -34,18 +48,4 @@ func (service *AuthService) Register(email, password, name string) (string, erro
 		return "", err
 	}
 	return createdUser.Email, nil
-}
-
-func (service *AuthService) Login(email, password string) (string, error) {
-	existedUser, _ := service.UserRepository.GetByEmail(email)
-	if existedUser == nil {
-		return "", errors.New(ErrWrongCredentials)
-	}
-
-	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
-	if err != nil {
-		return "", errors.New(ErrWrongCredentials)
-	}
-
-	return existedUser.Email, nil
 }
