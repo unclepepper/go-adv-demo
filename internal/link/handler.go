@@ -28,6 +28,7 @@ func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 	router.Handle("PATCH /link/{id}", middleware.IsAuthed(handler.Edit(), deps.Config))
 	router.HandleFunc("DELETE /link/{id}", handler.Delete())
 	router.HandleFunc("GET /{hash}", handler.GoTo())
+	router.HandleFunc("GET /links", handler.FindAll())
 }
 
 func (handler *LinkHandler) Create() http.HandlerFunc {
@@ -118,5 +119,26 @@ func (handler *LinkHandler) GoTo() http.HandlerFunc {
 		}
 		res.Json(w, link, 200)
 		//http.Redirect(w, r, link.URL, http.StatusTemporaryRedirect)
+	}
+}
+
+func (handler *LinkHandler) FindAll() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+		if err != nil {
+			limit = 5
+		}
+		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+		if err != nil {
+			offset = 0
+		}
+
+		links, err := handler.LinkRepository.Find(limit, offset)
+		count := handler.LinkRepository.Count()
+
+		res.Json(w, FindAllResponse{
+			Links: links,
+			Count: count,
+		}, 200)
 	}
 }
