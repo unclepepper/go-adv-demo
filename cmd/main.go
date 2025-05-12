@@ -8,6 +8,7 @@ import (
 	"go/adv-demo/internal/stat"
 	"go/adv-demo/internal/user"
 	"go/adv-demo/pkg/db"
+	"go/adv-demo/pkg/event"
 	"go/adv-demo/pkg/middleware"
 	"net/http"
 )
@@ -16,6 +17,7 @@ func main() {
 	conf := configs.LoadConfig()
 	newDb := db.NewDb(conf)
 	router := http.NewServeMux()
+	eventBus := event.NewEventBus()
 
 	// Repositories
 	linkRepository := link.NewLinkRepository(newDb)
@@ -24,6 +26,10 @@ func main() {
 
 	// Services
 	authService := auth.NewAuthService(userRepository)
+	statService := stat.NewStatService(&stat.StatServiceDeps{
+		EventBus:       eventBus,
+		StatRepository: statRepository,
+	})
 
 	// Handlers
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
@@ -33,7 +39,7 @@ func main() {
 	link.NewLinkHandler(router, link.LinkHandlerDeps{
 		LinkRepository: linkRepository,
 		Config:         conf,
-		StatRepository: statRepository,
+		EventBus:       eventBus,
 	})
 
 	// Middlewares
@@ -46,6 +52,8 @@ func main() {
 		Addr:    ":8080",
 		Handler: stack(router),
 	}
+
+	go statService.AddClick()
 
 	fmt.Println("Server is listening on :8080")
 	err := server.ListenAndServe()
